@@ -22,6 +22,7 @@ jobs:
       matrix:
         environment: [DEV] #, staging, prod]
       fail-fast: false
+    environment: ${{ matrix.environment }}
     
     steps:
     - name: Checkout
