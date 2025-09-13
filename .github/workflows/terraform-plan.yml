@@ -18,10 +18,9 @@ jobs:
   terraform-plan:
     name: 'Terraform Plan'
     runs-on: ubuntu-latest
-    environment: 'DEV'
     strategy:
       matrix:
-        environment: [dev] #, staging, prod]
+        environment: [DEV] #, staging, prod]
       fail-fast: false
     
     steps:

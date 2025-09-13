@@ -16,10 +16,9 @@ jobs:
   terraform-apply:
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
-    environment: 'DEV'
     strategy:
       matrix:
-        environment: [dev] #, staging, prod]
+        environment: [DEV] #, staging, prod]
       fail-fast: false
       max-parallel: 1  # Deploy environments sequentially
     
