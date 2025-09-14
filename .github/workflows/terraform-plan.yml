@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [dev] #, staging, prod]
+        environment: [dev] #, prod]
       fail-fast: false
     environment: ${{ matrix.environment }}
     env:
@@ -44,7 +44,6 @@ jobs:
         client-id: ${{ secrets.ARM_CLIENT_ID }}
         tenant-id: ${{ secrets.ARM_TENANT_ID }}
         subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-        # if you got different subscriptions (dev, staging, prod) you need to work with GitHub Environments to specifiy each subscription id secret
 
     - name: Install Security Tools
       run: |

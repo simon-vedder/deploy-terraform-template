@@ -17,7 +17,7 @@ provider "azurerm" {
 
 # Lokale Variablen
 locals {
-  environment = "dev"
+  environment = "prod"
   location    = "West Europe"
 
   tags = {
@@ -39,7 +39,7 @@ resource "azurerm_resource_group" "main" {
 # Virtual Network
 resource "azurerm_virtual_network" "main" {
   name                = "vnet-${local.resource_prefix}"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["10.2.0.0/16"]
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   tags                = local.tags
@@ -50,7 +50,7 @@ resource "azurerm_subnet" "internal" {
   name                 = "subnet-internal"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.2.1.0/24"]
 }
 
 # Network Security Group
@@ -115,7 +115,7 @@ resource "azurerm_windows_virtual_machine" "main" {
   }
 
   source_image_reference {
-    publisher = "MicrosoftWindowsServer"
+    publisher = "WindowsServer"
     offer     = "WindowsServer"
     sku       = "2025-datacenter-g2"
     version   = "latest"

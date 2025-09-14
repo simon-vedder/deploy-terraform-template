@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [dev] #, staging, prod]
+        environment: [dev] #, prod]
       fail-fast: false
       max-parallel: 1  # Deploy environments sequentially
     
@@ -42,31 +42,26 @@ jobs:
         subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
     - name: Terraform Init
-      run: |
-        cd terraform/environments/${{ matrix.environment }}
-        terraform init
+      run: terraform init
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Validate
-      run: |
-        cd terraform/environments/${{ matrix.environment }}
-        terraform validate
+      run: terraform validate
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Security Scan
-      run: |
-        cd terraform/environments/${{ matrix.environment }}
-        pip install checkov
+      run: pip install checkov
         checkov -d . --framework terraform --hard-fail-on CRITICAL,HIGH
       continue-on-error: ${{ matrix.environment == 'dev' }}
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Plan
-      run: |
-        cd terraform/environments/${{ matrix.environment }}
-        terraform plan -no-color -out=tfplan
+      run: terraform plan -no-color -out=tfplan
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Apply
-      run: |
-        cd terraform/environments/${{ matrix.environment }}
-        terraform apply -no-color -auto-approve tfplan
+      run: terraform apply -no-color -auto-approve tfplan
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Output
       if: success()
