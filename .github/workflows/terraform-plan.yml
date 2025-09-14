@@ -1,3 +1,4 @@
+# .github/workflows/terraform-plan.yml
 name: 'Terraform Plan'
 
 on:
@@ -9,36 +10,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
+  id-token: write   # Required for Azure OIDC authentication
   contents: read
-  pull-requests: write
+  pull-requests: write  # Required to comment on PRs
 
 jobs:
   terraform-plan:
     name: 'Terraform Plan'
     runs-on: ubuntu-latest
-    
     strategy:
       matrix:
-        environment: [dev, staging, prod]
+        environment: [dev] #, staging, prod]
       fail-fast: false
+    environment: ${{ matrix.environment }}
     
-    env:
-      # Environment-spezifische Variablen
-      TF_VAR_environment: ${{ matrix.environment }}
-      TF_VAR_location: "West Europe"
-      
-      # Azure Credentials
-      TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      
-      # Backend Configuration
-      TF_BACKEND_RESOURCE_GROUP: "rg-terraform-state"
-      TF_BACKEND_STORAGE_ACCOUNT: ${{ secrets.TERRAFORM_STATE_STORAGE_ACCOUNT }}
-      TF_BACKEND_CONTAINER: "tfstate"
-      TF_BACKEND_KEY: "${{ matrix.environment }}/terraform.tfstate"
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -50,11 +35,12 @@ jobs:
         terraform_wrapper: false
 
     - name: Azure Login via OIDC
-      uses: azure/login@v1
+      uses: azure/login@v
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        client-id: ${{ secrets.ARM_CLIENT_ID }}
+        tenant-id: ${{ secrets.ARM_TENANT_ID }}
+        subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        # if you got different subscriptions (dev, staging, prod) you need to work with GitHub Environments to specifiy each subscription id secret
 
     - name: Install Security Tools
       run: |
@@ -62,12 +48,7 @@ jobs:
         curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
 
     - name: Terraform Init
-      run: |
-        terraform init \
-          -backend-config="resource_group_name=${TF_BACKEND_RESOURCE_GROUP}" \
-          -backend-config="storage_account_name=${TF_BACKEND_STORAGE_ACCOUNT}" \
-          -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
-          -backend-config="key=${TF_BACKEND_KEY}"
+      run: terraform init 
       working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Validate
@@ -79,15 +60,14 @@ jobs:
       working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Security Scan - Checkov
-      run: |
-        checkov -d . --framework terraform --output cli --skip-check CKV_AZURE_50
-      working-directory: terraform/environments/${{ matrix.environment }}
+      run: checkov -d . --framework terraform --output cli --skip-check CKV_AZURE_50
       continue-on-error: true
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Security Scan - TFSec
       run: tfsec .
-      working-directory: terraform/environments/${{ matrix.environment }}
       continue-on-error: true
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Terraform Plan
       id: plan
@@ -102,49 +82,45 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const path = require('path');
           const environment = '${{ matrix.environment }}';
-          const planPath = path.join('terraform', 'environments', environment, 'tfplan.txt');
+          const planPath = `terraform/environments/${environment}/tfplan.txt`;
           
           let planOutput = '';
           try {
             planOutput = fs.readFileSync(planPath, 'utf8');
           } catch (error) {
-            planOutput = `Error reading plan file: ${error.message}`;
+            planOutput = 'Plan file not found';
           }
           
-          // Truncate if too long
-          if (planOutput.length > 50000) {
-            planOutput = planOutput.substring(0, 50000) + '\n\n... (output truncated)';
+          // Truncate plan if too long for GitHub comment
+          if (planOutput.length > 60000) {
+            planOutput = planOutput.substring(0, 60000) + '\n\n... (truncated)';
           }
           
-          const commentBody = `## 🏗️ Terraform Plan - \`${environment}\`
-          
-          **Status:** ${{ steps.plan.outcome }}
+          const commentBody = `## Terraform Plan Results - \`${environment}\`
           
           <details>
-          <summary>📋 Show Terraform Plan</summary>
+          <summary>📋 Show Plan</summary>
           
-          \`\`\`terraform
+          \`\`\`hcl
           ${planOutput}
           \`\`\`
           
           </details>
           
-          ---
-          *Environment: \`${environment}\`*
+          **Status:** ${{ steps.plan.outcome }}
           `;
           
           const { owner, repo } = context.repo;
-          const pullNumber = context.payload.pull_request.number;
+          const pull_number = context.payload.pull_request.number;
           
-          // Find existing comment for this environment
+          // Find existing comment
           const { data: comments } = await github.rest.issues.listComments({
-            owner, repo, issue_number: pullNumber
+            owner, repo, issue_number: pull_number,
           });
           
           const existingComment = comments.find(comment => 
-            comment.body.includes(`Terraform Plan - \`${environment}\``)
+            comment.body.includes(`Terraform Plan Results - \`${environment}\``)
           );
           
           if (existingComment) {
@@ -156,7 +132,7 @@ jobs:
           } else {
             await github.rest.issues.createComment({
               owner, repo,
-              issue_number: pullNumber,
+              issue_number: pull_number,
               body: commentBody
             });
           }
