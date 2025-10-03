@@ -1,81 +1,3 @@
-# # .github/workflows/terraform-apply.yml
-# name: 'Terraform Apply'
-
-# on:
-#   push:
-#     branches: [ main ]
-#     paths:
-#       - 'terraform/**'
-#   workflow_dispatch:
-
-# permissions:
-#   id-token: write   # Required for Azure OIDC authentication
-#   contents: read
-
-# jobs:
-#   terraform-apply:
-#     name: 'Terraform Apply'
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         environment: [dev] #, prod]
-#       fail-fast: false
-#       max-parallel: 1  # Deploy environments sequentially
-#     environment: ${{ matrix.environment }}
-#     env:
-#         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-#         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-#         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v4
-
-#     - name: Setup Terraform
-#       uses: hashicorp/setup-terraform@v3
-#       with:
-#         terraform_version: 1.6.0
-#         terraform_wrapper: false
-
-#     - name: Azure Login via OIDC
-#       uses: azure/login@v1
-#       with:
-#         client-id: ${{ secrets.ARM_CLIENT_ID }}
-#         tenant-id: ${{ secrets.ARM_TENANT_ID }}
-#         subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-
-#     - name: Terraform Init
-#       run: terraform init
-#       working-directory: terraform/environments/${{ matrix.environment }}
-
-#     - name: Terraform Validate
-#       run: terraform validate
-#       working-directory: terraform/environments/${{ matrix.environment }}
-
-#     - name: Security Scan
-#       run: pip install checkov
-#         checkov -d . --framework terraform --hard-fail-on CRITICAL,HIGH
-#       continue-on-error: ${{ matrix.environment == 'dev' }}
-#       working-directory: terraform/environments/${{ matrix.environment }}
-
-#     - name: Terraform Plan
-#       run: terraform plan -no-color -out=tfplan
-#       working-directory: terraform/environments/${{ matrix.environment }}
-
-#     - name: Terraform Apply
-#       run: terraform apply -no-color -auto-approve tfplan
-#       working-directory: terraform/environments/${{ matrix.environment }}
-
-#     - name: Terraform Output
-#       if: success()
-#       run: |
-#         cd terraform/environments/${{ matrix.environment }}
-#         echo "### 📋 Terraform Outputs - ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
-#         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-#         terraform output >> $GITHUB_STEP_SUMMARY
-#         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-
 # .github/workflows/terraform-apply.yml
 name: 'Terraform Apply'
 
@@ -154,6 +76,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: terraform-apply-dev
     if: success()
+
+    permissions:
+      issues: write
+
+    steps:
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: simon-vedder # Replace with GitHub usernames, with the free version you can only have an issue assigned to one username
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body: "Please approve or deny the deployment."
 
   terraform-apply-prod:
     name: 'Terraform Apply - Prod'
