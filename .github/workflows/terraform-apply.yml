@@ -65,11 +65,11 @@ jobs:
     - name: Terraform Output
       if: success()
       run: |
-        cd terraform/environments/dev
         echo "### 📋 Terraform Outputs - dev" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      working-directory: terraform/environments/dev
 
   manual-approval:
     name: Manual Approval
@@ -143,8 +143,8 @@ jobs:
     - name: Terraform Output
       if: success()
       run: |
-        cd terraform/environments/prod
-        echo "### 📋 Terraform Outputs - prod" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Terraform Outputs - dev" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      working-directory: terraform/environments/prod
