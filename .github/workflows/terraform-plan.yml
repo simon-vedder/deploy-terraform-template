@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [dev] #, prod]
+        environment: [dev, prod]
       fail-fast: false
     environment: ${{ matrix.environment }}
     env:
