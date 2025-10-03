@@ -149,11 +149,11 @@ jobs:
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
-    manual-approval:
-      name: Manual Approval
-      runs-on: ubuntu-latest
-      needs: terraform-apply-dev
-      if: success()
+  manual-approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: terraform-apply-dev
+    if: success()
 
   terraform-apply-prod:
     name: 'Terraform Apply - Prod'
