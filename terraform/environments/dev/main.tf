@@ -96,7 +96,7 @@ resource "azurerm_subnet_network_security_group_association" "main" {
 
 # Virtual Machine
 resource "azurerm_windows_virtual_machine" "main" {
-  name                = "vm-${local.resource_prefix}"
+  name                = "vm-${local.resource_prefix}-pr"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   size                = "Standard_B1s"
