@@ -15,7 +15,7 @@ provider "azurerm" {
   use_oidc = true
 }
 
-# Lokale Variablen
+# Local variables
 locals {
   environment = "prod"
   location    = "West Europe"
