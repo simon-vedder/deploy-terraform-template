@@ -89,7 +89,7 @@ jobs:
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file terraform/environments/${{matrix.environment}}/tfplan \
-            --name plan/${{matrix.environment}} \
+            --name ${{matrix.environment}}/plan/tfplan \
             --overwrite \
             --auth-mode login
 

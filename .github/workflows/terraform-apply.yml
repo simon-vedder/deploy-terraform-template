@@ -68,7 +68,7 @@ jobs:
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file tfplan \
-            --name plan/dev \
+            --name dev/plan/tfplan \
             --auth-mode login
 
     - name: Terraform Apply
@@ -165,7 +165,7 @@ jobs:
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file tfplan \
-            --name plan/prod \
+            --name prod/plan/tfplan \
             --auth-mode login
 
     - name: Terraform Apply
