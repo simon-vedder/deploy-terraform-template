@@ -98,6 +98,7 @@ jobs:
             | sed -e 's/created/:white_check_mark: create/' -e 's/destroyed/:bangbang: destroy/' -e 's/replaced/:recycle: replace/'
         } > plan.md
         cat plan.md >> $GITHUB_STEP_SUMMARY
+      working-directory: terraform/environments/${{ matrix.environment }}
 
     - name: Update PR comments
       if: github.event_name == 'pull_request'
