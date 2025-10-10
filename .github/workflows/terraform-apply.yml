@@ -64,7 +64,7 @@ jobs:
         inlineScript: | 
           set -e
           echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
-          az storage blobl download \
+          az storage blob download \
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file tfplan \
@@ -161,7 +161,7 @@ jobs:
         inlineScript: | 
           set -e
           echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
-          az storage blobl download \
+          az storage blob download \
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file tfplan \
@@ -169,7 +169,7 @@ jobs:
             --auth-mode login
 
     - name: Terraform Apply
-      run: terraform apply -no-color -auto-approve tfplan | tee apply.txt
+      run: terraform apply -no-color -auto-approve ${{env.CURRENT_PATH}}/tfplan | tee apply.txt
       working-directory: terraform/environments/prod
 
     - name: Display the apply summary

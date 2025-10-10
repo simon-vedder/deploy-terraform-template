@@ -85,7 +85,7 @@ jobs:
         azcliversion: latest
         inlineScript: | 
           set -e
-          az storage blobl upload \
+          az storage blob upload \
             --account-name thisisatestsaacc \
             --container-name tfstatefiles \
             --file terraform/environments/${{matrix.environment}}/tfplan \
