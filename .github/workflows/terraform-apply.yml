@@ -33,7 +33,7 @@ jobs:
         terraform_wrapper: false
 
     - name: Azure Login via OIDC
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         client-id: ${{ secrets.ARM_CLIENT_ID }}
         tenant-id: ${{ secrets.ARM_TENANT_ID }}
@@ -54,12 +54,25 @@ jobs:
       continue-on-error: true
       working-directory: terraform/environments/dev
 
-    - name: Terraform Plan
-      run: terraform plan -no-color -out=tfplan
-      working-directory: terraform/environments/dev
+    # - name: Terraform Plan
+    #   run: terraform plan -no-color -out=tfplan
+    #   working-directory: terraform/environments/dev
+    - name: Terraform Plan - Download
+      uses: azure/cli@v2
+      with:
+        azcliversion: latest
+        inlineScript: | 
+          set -e
+          echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
+          az storage blobl download \
+            --account-name thisisatestsaacc \
+            --container-name tfstatefiles \
+            --file tfplan \
+            --name plan/dev \
+            --auth-mode login
 
     - name: Terraform Apply
-      run: terraform apply -no-color -auto-approve tfplan | tee apply.txt
+      run: terraform apply -no-color -auto-approve ${{env.CURRENT_PATH}}/tfplan | tee apply.txt
       working-directory: terraform/environments/dev
 
     - name: Display the apply summary
@@ -116,7 +129,7 @@ jobs:
         terraform_wrapper: false
 
     - name: Azure Login via OIDC
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         client-id: ${{ secrets.ARM_CLIENT_ID }}
         tenant-id: ${{ secrets.ARM_TENANT_ID }}
@@ -137,9 +150,23 @@ jobs:
       continue-on-error: false
       working-directory: terraform/environments/prod
 
-    - name: Terraform Plan
-      run: terraform plan -no-color -out=tfplan 
-      working-directory: terraform/environments/prod
+    # - name: Terraform Plan
+    #   run: terraform plan -no-color -out=tfplan 
+    #   working-directory: terraform/environments/prod
+
+    - name: Terraform Plan - Download
+      uses: azure/cli@v2
+      with:
+        azcliversion: latest
+        inlineScript: | 
+          set -e
+          echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
+          az storage blobl download \
+            --account-name thisisatestsaacc \
+            --container-name tfstatefiles \
+            --file tfplan \
+            --name plan/prod \
+            --auth-mode login
 
     - name: Terraform Apply
       run: terraform apply -no-color -auto-approve tfplan | tee apply.txt
