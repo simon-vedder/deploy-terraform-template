@@ -96,7 +96,9 @@ jobs:
     - name: Display the plan summary
       id: display
       run: |
+        ENVIRONMENT="${{ matrix.environment }}"
         {
+          echo "## Terraform Plan Summary for environment: $ENVIRONMENT"
           awk '/No changes. Your infrastructure matches the configuration./ {
             print "## " $0
             print "Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed."
@@ -108,7 +110,7 @@ jobs:
             print "|------|--------|"
             exit
           }' plan.txt
-          awk '/Terraform used the selected/{ next } /will be/ || /must be/ {print "|" $5 "|" $2 "|"; next} /Plan (${{ matrix.environment }}):/{ print "## " $0; next }' plan.txt \
+          awk '/Terraform used the selected/{ next } /will be/ || /must be/ {print "|" $5 "|" $2 "|"; next} /Plan:/{ print "## " $0; next }' plan.txt \
             | sed -e 's/created/:white_check_mark: create/' -e 's/destroyed/:bangbang: destroy/' -e 's/replaced/:recycle: replace/'
         } > plan.md
         cat plan.md >> $GITHUB_STEP_SUMMARY
