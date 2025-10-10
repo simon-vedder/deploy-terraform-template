@@ -73,6 +73,8 @@ jobs:
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      working-directory: terraform/environments/dev
+      
 
   manual-approval:
     name: Manual Approval
@@ -154,3 +156,4 @@ jobs:
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      working-directory: terraform/environments/prod
