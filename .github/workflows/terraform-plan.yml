@@ -98,7 +98,7 @@ jobs:
       run: |
         ENVIRONMENT="${{ matrix.environment }}"
         {
-          echo "## Terraform Plan Summary for environment: $ENVIRONMENT"
+          echo "# Terraform Plan Summary for environment: $ENVIRONMENT"
           awk '/No changes. Your infrastructure matches the configuration./ {
             print "## " $0
             print "Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed."
