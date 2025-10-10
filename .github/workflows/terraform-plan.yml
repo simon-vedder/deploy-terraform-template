@@ -121,4 +121,4 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         issue-number: ${{ github.event.number }}
-        body-path: plan.md
+        body-path: terraform/environments/${{ matrix.environment }}/plan.md
