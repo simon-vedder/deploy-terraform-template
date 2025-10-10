@@ -59,17 +59,20 @@ jobs:
       working-directory: terraform/environments/dev
 
     - name: Terraform Apply
-      run: terraform apply -no-color -auto-approve tfplan
+      run: terraform apply -no-color -auto-approve tfplan | tee apply.txt
       working-directory: terraform/environments/dev
 
-    - name: Terraform Output
-      if: success()
+    - name: Display the apply summary
+      id: display
       run: |
+        {
+          awk '/::debug::stdout:/{ next } /Apply complete!/ { print "## " $0; exit }' apply.txt
+        } > apply.md
+        cat apply.md >> $GITHUB_STEP_SUMMARY
         echo "### 📋 Terraform Outputs - dev" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-      working-directory: terraform/environments/dev
 
   manual-approval:
     name: Manual Approval
@@ -139,3 +142,15 @@ jobs:
     - name: Terraform Apply
       run: terraform apply -no-color -auto-approve tfplan
       working-directory: terraform/environments/prod
+
+    - name: Display the apply summary
+      id: display
+      run: |
+        {
+          awk '/::debug::stdout:/{ next } /Apply complete!/ { print "## " $0; exit }' apply.txt
+        } > apply.md
+        cat apply.md >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Terraform Outputs - prod" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        terraform output >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

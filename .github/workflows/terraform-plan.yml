@@ -76,5 +76,34 @@ jobs:
       id: plan
       run: |
         terraform plan -no-color -out=tfplan
-        terraform show -no-color tfplan > tfplan.txt
+        terraform show -no-color tfplan > plan.txt
       working-directory: terraform/environments/${{ matrix.environment }}
+
+    - name: Display the plan summary
+      id: display
+      run: |
+        {
+          awk '/No changes. Your infrastructure matches the configuration./ {
+            print "## " $0
+            print "Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed."
+            exit
+          }' plan.txt
+          awk '/Terraform will perform the following actions:/ {
+            print "## Terraform will perform the following actions:"
+            print "|Action|Resource|"
+            print "|------|--------|"
+            exit
+          }' plan.txt
+          awk '/Terraform used the selected/{ next } /will be/ || /must be/ {print "|" $5 "|" $2 "|"; next} /Plan:/{ print "## " $0; next }' plan.txt \
+            | sed -e 's/created/:white_check_mark: create/' -e 's/destroyed/:bangbang: destroy/' -e 's/replaced/:recycle: replace/'
+        } > plan.md
+        cat plan.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Update PR comments
+      if: github.event_name == 'pull_request'
+      id: comment
+      uses: peter-evans/create-or-update-comment@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.number }}
+        body-path: plan.md
