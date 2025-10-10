@@ -18,9 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     env:
+        env: dev
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        STORAGEACCOUNT_NAME: thisisatestsaacc # possible to add in github env
+        CONTAINER_NAME: tfstatefiles # possible to add in github env
 
     steps:
     - name: Checkout
@@ -41,22 +44,19 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
-      working-directory: terraform/environments/dev
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Terraform Validate
       run: terraform validate
-      working-directory: terraform/environments/dev
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Security Scan
       run: |
         pip install checkov
         checkov -d . --framework terraform --hard-fail-on CRITICAL,HIGH
       continue-on-error: true
-      working-directory: terraform/environments/dev
+      working-directory: terraform/environments/${{env.env}}
 
-    # - name: Terraform Plan
-    #   run: terraform plan -no-color -out=tfplan
-    #   working-directory: terraform/environments/dev
     - name: Terraform Plan - Download
       uses: azure/cli@v2
       with:
@@ -65,15 +65,15 @@ jobs:
           set -e
           echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
           az storage blob download \
-            --account-name thisisatestsaacc \
-            --container-name tfstatefiles \
+            --account-name ${{env.STORAGEACCOUNT_NAME}} \
+            --container-name ${{env.CONTAINER_NAME}} \
             --file tfplan \
-            --name dev/plan/tfplan \
+            --name ${{env.env}}/plan/tfplan \
             --auth-mode login
 
     - name: Terraform Apply
       run: terraform apply -no-color -auto-approve ${{env.CURRENT_PATH}}/tfplan | tee apply.txt
-      working-directory: terraform/environments/dev
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Display the apply summary
       id: display
@@ -82,11 +82,11 @@ jobs:
           awk '/::debug::stdout:/{ next } /Apply complete!/ { print "## " $0; exit }' apply.txt
         } > apply.md
         cat apply.md >> $GITHUB_STEP_SUMMARY
-        echo "### 📋 Terraform Outputs - dev" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Terraform Outputs" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-      working-directory: terraform/environments/dev
+      working-directory: terraform/environments/${{env.env}}
       
 
   manual-approval:
@@ -114,9 +114,12 @@ jobs:
     needs: manual-approval  # requires dev env to succeed
     environment: prod
     env:
+        env: prod
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        STORAGEACCOUNT_NAME: thisisatestsaacc # possible to add in github env
+        CONTAINER_NAME: tfstatefiles # possible to add in github env
 
     steps:
     - name: Checkout
@@ -137,22 +140,18 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
-      working-directory: terraform/environments/prod
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Terraform Validate
       run: terraform validate
-      working-directory: terraform/environments/prod
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Security Scan
       run: |
         pip install checkov
         checkov -d . --framework terraform --hard-fail-on CRITICAL,HIGH
       continue-on-error: false
-      working-directory: terraform/environments/prod
-
-    # - name: Terraform Plan
-    #   run: terraform plan -no-color -out=tfplan 
-    #   working-directory: terraform/environments/prod
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Terraform Plan - Download
       uses: azure/cli@v2
@@ -162,15 +161,15 @@ jobs:
           set -e
           echo "CURRENT_PATH=$(pwd)" >> $GITHUB_ENV
           az storage blob download \
-            --account-name thisisatestsaacc \
-            --container-name tfstatefiles \
+            --account-name ${{env.STORAGEACCOUNT_NAME}} \
+            --container-name ${{env.CONTAINER_NAME}} \
             --file tfplan \
-            --name prod/plan/tfplan \
+            --name ${{env.env}}/plan/tfplan \
             --auth-mode login
 
     - name: Terraform Apply
       run: terraform apply -no-color -auto-approve ${{env.CURRENT_PATH}}/tfplan | tee apply.txt
-      working-directory: terraform/environments/prod
+      working-directory: terraform/environments/${{env.env}}
 
     - name: Display the apply summary
       id: display
@@ -179,8 +178,8 @@ jobs:
           awk '/::debug::stdout:/{ next } /Apply complete!/ { print "## " $0; exit }' apply.txt
         } > apply.md
         cat apply.md >> $GITHUB_STEP_SUMMARY
-        echo "### 📋 Terraform Outputs - prod" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Terraform Outputs" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         terraform output >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-      working-directory: terraform/environments/prod
+      working-directory: terraform/environments/${{env.env}}
